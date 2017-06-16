@@ -1,0 +1,57 @@
+RELATIONSHIPS BETWEEN BREEDING BIRD, TREE AND LEPIDOPTERA DIVERSITY IN MID-ATLANTIC RESIDENTIAL LANDSCAPES
+
+ABSTRACT
+INTRODUCTION
+	Interest in understanding how animal communities are distributed in space with regard to environmental variables
+	Private management has the potential to cause high spatial heterogeneity in plant communities over small areas. Urban areas also tend to support bird communities that are less diverse suggesting urban areas may have reached diversity levels that too high to support high diversity. 
+	Numerous studies have documented a substantial decrease in species richness of taxa as landscapes become urbanized, but few studies have looked at community relationships between taxa within the developed landscape. Some researchers have suggested that the high diversity of trees in suburban areas could support higher diversity of consumers, but this hypothesis has not yet been explicitly tested. 
+	Niche-based vs. dispersal based processes. In urban areas, reduction of available niches, and/or expansion of opportunistic generalist species across multiple spaces, may reverse community assembly from niche-based to dispersal-based processes. In addition, use of 
+	Study/hypothesis. In this study, we investigated the relationship between residential bird and tree assemblages across an urban gradient in the Washington D.C. metropolitan area. Using a robust dataset of both tree and bird communities across >150 neighborhoods, we tested whether bird richness is positively related to tree richness and whether avian communities can be predicted by tree composition or by vegetation structure alone.  We also tested whether relationships held across avian guilds under the hypothesis that insectivores frugivores might be more sensitive to changes in tree community composition. Finally, we tested whether tree diversity was related to the conservation value of the bird community using a derived index. 
+
+METHODS
+       Sites. Sites were located in XX neighborhoods in the DC Metropolitan area over a gradient of urbanization. Sites were included as part of Neighborhood Nestwatch (XX, Narango, et al.), a citizen science program to study the demography of birds in residential landscapes. Sites were included based on permissions to access private property, however, sites were distributed over a gradient of impervious surface (a proxy for urbanization) and were separated by at least 1 km. Impervious surface was calculated using landcover spatial layers from XX (resolution 30-m) using package RASTER in program R (XX). We determined ‘urbanization’ by averaging the average impervious surface within 500-m of the study location. 
+       Bird Surveys. Bird surveys were conducted over three periods, Period 1 (April 15-May 15), Period 2 (May 15-June 15) and Period 3 (June 15-July 31). Each survey was conducted between 6:30am-11am on mornings with low wind, no inclement weather and minimal noise. A trained observer conducted a 10 minute point count where all birds seen or heard within 50m were recorded. Flyovers were excluded from analyses. 
+       Woody Plant Surveys. Woody plants were sampled at 5, non-overlapping i-Tree plots located within 50m of the bird survey location. Survey centers were located using GIS software. During the survey, the observers measured and identified every woody plant within an 11.3m radius plot that was >0.5m tall. Diversity was acquired by summing the number of woody plants that occurred within the 5 plots. 
+       Lepidoptera Diversity. Sampling lepidoptera diversity is notoriously difficult and time-consuming due to the spatial and temporal patchy nature of larvae abundance (XX) and the difficulty of identifying early instars (XX). Therefore, for this study, in order to quantify ‘Potential Lepidoptera diversity’, we used host plant records of all lepidoptera species known to feed on a particular genera gleaned from Tallamy and Shropshire (XX) and the HOST plant database (XX).  Numbers of caterpillar species include both native and non-native species. Although bird presence may respond most strongly to food abundance (XX), our previous work showed that potential lepidoptera diversity was strongly positively related to abundance and biomass (Narango et al. in review). 
+       Data manipulation. Prior to analyses, we removed from the dataset all species that are winter residents, and/or non-breeding migratory individuals. We also removed all species detected as flyovers
+        Foraging guilds were gleaned from data acquired from Birds of North America or the Diets of Birds and Mammals (Martin et al 1961). 
+       We separated plant diversity into ‘native diversity’ and ‘total diversity’ by acquiring plant origin from the USGS plant distribution database (XX). We defined ‘native’ as any woody plant that has a natural distribution that occurs east of the Mississippi river. 
+       Calculating ‘Bird Conservation Index’. We calculated a ‘bird conservation index’ using methods described in Ladin et al 2016 for bird communities in the mid-atlantic. First, all species were classified into functional, compositional and structural guilds (O’Connell et al XX). Then we calculated the proportion of the species community in each guild, assigned scores for each guild and then summed scores for total BCI scores. Higher values of BCI indicates yards have higher “biotic integrity” resulting from more members of specialist guilds (O’Connell et al 1998). 
+       Data Analysis. Analyses were performed at the site level, with each site composed of bird surveys from 2-12 visits between 2013-2015 and vegetation surveys from 5 plots randomly located within 50m of the bird survey point. To estimate total species richness per site we conducted multi-species, multi-year, occupancy models for the bird community (Carillo-Rubio et al 2014). Raw species richness was summed for the four years of the study. We also filtered species richness into 3 trophic categories, 1) insectivore richness, 2) omnivore richness and 3) conservation richness. Insectivore richness was the total number of species that consume <25% plant matter in their diet during the breeding season. Omnivore richness is the total number of species that consume >25% plant matter
+1. Multi-species occupancy model for the bird community
+2. Linear Regression (Bird alpha ~ Tree alpha, Bird Alpha ~ Tree alpha * Urbanization)
+3. Beta diversity? (Bird beta ~ urbanization, Tree beta ~ Urbanization)
+4. Mantel Test, Distance Matrix: environmental distance matrix:
+a. Measure turnover of birds and trees by comparing change of plots along the urbanization gradient
+b. http://www.planta.cn/forum/files_planta/chapter_8_analysis_of_differences_in_species_composition_172.pdf
+c. Multiple Regression on distance matrices
+5. CCA (Birds ~Trees), Urbanization, Tree Diversity
+6. Relationship between bird diversity and Lepidoptera diversity
+
+RESULTS
+1. Summary of raw diversity
+2. 
+
+DISCUSSION
+
+
+
+
+
+
+REFERENCES
+http://onlinelibrary.wiley.com/doi/10.1111/jbi.12041/full
+http://www.esajournals.org/doi/abs/10.1890/0012-9658(2001)082[2381:WITORB]2.0.CO;2
+http://www.sciencedirect.com/science/article/pii/S0169204613002065
+http://www.sciencedirect.com/science/article/pii/S0006320714000494
+http://www.esajournals.org/doi/abs/10.1890/11-1300.1
+http://onlinelibrary.wiley.com/doi/10.1111/j.1366-9516.2004.00085.x/full
+http://onlinelibrary.wiley.com/doi/10.1111/j.1472-4642.2012.00937.x/pdf
+Avolio, M et al. 2015. Tree diversity in southern California's urban forest: the interacting roles of social and environmental variables FEE
+Avolio, M. etal. 2013 Understanding preferences for tree attributes: the relative effects of socio-economic and local environmental factors,Urban ecosystems
+Jankowski, J. 2008. Beta diversity along environmental gradients: implications of habitat specialization in tropical montane landscapes, Animal ecology
+better environmental data in niche-based vs. dispersal based processes
+http://www.ncbi.nlm.nih.gov/pubmed/24358699
+
+Other references to read
+

@@ -1,0 +1,150 @@
+---
+title: "BCI index"
+author: "Desiree Narango"
+date: "April 23, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r }
+library(dplyr)
+birdsurvey<-read.csv("C:/Users/dnarango/Desktop/FINAL DATA/finalpointcounts_28march2017.csv", na.strings=".") %>%
+        select(id,site, year, month,juldate, timeformat, species_format,total) %>%
+        group_by(site, year, month, species_format) %>%
+        summarise(total=sum(total)) %>%
+        mutate(present=1) %>%
+        mutate(visit=paste(year,"-",month)) %>%
+        ungroup() %>%
+        select(-month, -year, -total) %>%
+  spread(species_format, present, fill=0) %>%
+        gather(species_format, present,3:98) %>%
+        spread(visit, present, fill=NA)  %>%
+  
+   #Filter out species that are stupid
+        #Filter out surveys that shouldn't be included
+        
+  
+### Make the Guilds
+guild<-read.csv("C:/Users/dnarango/Documents/Manuscripts/bird plant lep communities/oconnel_BCI_guilds.csv")
+
+rank<-read.csv("C:/Users/dnarango/Documents/Manuscripts/bird plant lep communities/oconnel_BCI_rank.csv")
+
+## Functional
+omnivore<- guild %>%
+      filter(response=="omnivore")%>% mutate(omnivore=1) %>% select(species, omnivore)
+bark_prober<- guild %>%
+      filter(response=="bark_prober")%>% mutate(bark_prober=1) %>% select(species, bark_prober)  
+ground_gleaner<- guild %>%
+      filter(response=="ground_gleaner")%>% mutate(ground_gleaner=1) %>% select(species, ground_gleaner)
+upper_canopy<- guild %>%
+      filter(response=="upper_canopy")%>% mutate(upper_canopy=1) %>% select(species, upper_canopy)
+lower_canopy<- guild %>%
+      filter(response=="lower_canopy")%>% mutate(lower_canopy=1) %>% select(species, lower_canopy)
+
+##Compositional
+predator_parasite<- guild %>%
+      filter(response=="predator_parasite")%>% mutate(predator_parasite=1) %>% select(species,       predator_parasite)
+exotic<- guild %>%
+      filter(response=="exotic")%>% mutate(exotic=1) %>% select(species, exotic)
+resident<- guild %>%
+      filter(response=="resident")%>% mutate(resident=1) %>% select(species, resident)
+temperate_migrant<- guild %>%
+      filter(response=="temperate_migrant")%>% mutate(temperate_migrant=1) %>% select(species, temperate_migrant)
+single_brood<- guild %>%
+      filter(response=="single-brood")%>% mutate(single_brood=1) %>% select(species, single_brood)
+
+##Structural
+forest_ground<- guild %>%
+      filter(response=="forest_ground")%>% mutate(forest_ground=1) %>% select(species, forest_ground)
+open_ground<- guild %>%
+      filter(response=="open_ground")%>% mutate(open_ground=1) %>% select(species, open_ground)
+shrub<- guild %>%
+      filter(response=="shrub")%>% mutate(shrub=1) %>% select(species, shrub)
+canopy<- guild %>%
+      filter(response=="canopy_nester")%>% mutate(canopy=1) %>% select(species, canopy)
+forest_generalist<- guild %>%
+      filter(response=="forest_generalist")%>% mutate(forest_generalist=1) %>% select(species, forest_generalist)
+interior_forest<- guild %>%
+      filter(response=="interior_forest")%>% mutate(interior_forest=1) %>% select(species, interior_forest)
+
+## Make the BCI
+  BCI<-birdsurvey %>%
+        mutate(total=rowSums(birdsurvey[c(3:15)], na.rm=TRUE)) %>%
+        filter(total!=0) %>%
+        select(site, species_format, total) %>%
+        rename(species=species_format) %>%
+        left_join(omnivore, by="species") %>%
+        left_join(bark_prober, by="species") %>%
+    left_join(ground_gleaner, by="species") %>%
+    left_join(upper_canopy, by="species") %>%
+    left_join(lower_canopy, by="species") %>%
+    left_join(predator_parasite, by="species") %>%
+    left_join(exotic, by="species") %>%
+    left_join(resident, by="species") %>%
+    left_join(temperate_migrant, by="species") %>%
+    left_join(single_brood, by="species") %>%
+    left_join(forest_ground, by="species") %>%
+    left_join(open_ground, by="species") %>%
+    left_join(shrub, by="species") %>%
+    left_join(canopy, by="species") %>%
+    left_join(forest_generalist, by="species") %>%
+    left_join(interior_forest, by="species") %>%
+        mutate_each(funs(replace(., which(is.na(.)), 0))) %>%
+    select(-total) %>%
+    mutate(present=1) %>%
+    group_by(site) %>%
+      summarise(total_species=sum(present), total_omnivore=sum(omnivore), total_bark=sum(bark_prober),
+                total_groundgleaner=sum(ground_gleaner), total_upper=sum(upper_canopy),
+                total_lower=sum(lower_canopy), total_predparasite=sum(predator_parasite),
+                total_exotic=sum(exotic), total_resident=sum(resident),
+                total_temperate=sum(temperate_migrant), total_single=sum(single_brood), 
+                total_forestground=sum(forest_ground), total_openground=sum(open_ground),
+                total_shrub=sum(shrub), total_canopy=sum(canopy),
+                total_forestgen=sum(forest_generalist), total_interior=sum(interior_forest)) %>%
+    mutate(omnivore=total_omnivore/total_species, 
+           bark_prober=total_bark/total_species,
+           ground_gleaner=total_groundgleaner/total_species, 
+           upper_canopy=total_upper/total_species,
+           lower_canopy=total_lower/total_species, 
+           predator_parasite=total_predparasite/total_species,
+           exotic=total_exotic/total_species, 
+           resident=total_resident/total_species,
+           temperate_migrant=total_temperate/total_species, 
+           single_brood=total_single/total_species,
+           forest_ground=total_forestground/total_species,
+           open_ground=total_openground/total_species, 
+           shrub=total_shrub/total_species, 
+           canopy_nester=total_canopy/total_species,
+           forest_generalist=total_forestgen/total_species,
+           interior_forest=total_interior/total_species) %>%
+    select(site, omnivore:interior_forest) %>%
+    gather(guild, percent, omnivore:interior_forest)
+  
+  BCI2<-BCI %>%
+        mutate(rank=ifelse(guild=="omnivore" & percent<=0.29, 5, ifelse(guild=="omnivore" & percent>0.29 & percent<=0.41,4, ifelse(guild=="omnivore" & percent>0.41 & percent<=0.48,3,ifelse(guild=="omnivore" & percent>0.48 & percent<=0.58,2,ifelse(guild=="omnivore" & percent>0.58,1,NA)))))) %>%
+    mutate(rank=ifelse(guild=="bark_prober" & percent<=0.06, 1.5, ifelse(guild=="bark_prober" & percent>0.06 & percent<=0.11,3, ifelse(guild=="bark_prober" & percent>0.11 & percent<=0.17,4,ifelse(guild=="bark_prober" & percent>0.17,5,rank))))) %>%
+    mutate(rank=ifelse(guild=="canopy_nester" & percent<=0.28, 1.5, ifelse(guild=="canopy_nester" & percent>0.28 & percent<=0.32,2, ifelse(guild=="canopy_nester" & percent>0.32,4.5,rank)))) %>%
+    mutate(rank=ifelse(guild=="exotic" & percent==0, 5, ifelse(guild=="exotic" & percent>0 & percent<=0.02,4.5, ifelse(guild=="exotic" & percent>0.02 & percent<=0.05,3, ifelse(guild=="exotic" & percent>0.05 & percent<=0.11,2, ifelse(guild=="exotic" & percent>0.11,1,rank)))))) %>%
+    mutate(rank=ifelse(guild=="forest_generalist" & percent<=0.28, 4.5, ifelse(guild=="forest_generalist" & percent>0.28, 2.5,rank))) %>%
+    mutate(rank=ifelse(guild=="forest_ground" & percent==0, 1, ifelse(guild=="forest_ground" & percent>0.001 & percent<=0.02,1.5, ifelse(guild=="forest_ground" & percent>0.02 & percent<=0.16,3, ifelse(guild=="forest_ground" & percent>0.16 & percent<=0.24,4.5, ifelse(guild=="forest_ground" & percent>0.24,5,rank))))))%>%
+    mutate(rank=ifelse(guild=="ground_gleaner" & percent>=0 & percent<=0.05, 1.5, ifelse(guild=="ground_gleaner" & percent>0.05 & percent<=0.07,2, ifelse(guild=="ground_gleaner" & percent>0.07 & percent<=0.14,4.5, ifelse(guild=="ground_gleaner" & percent>0.14,5,rank)))))%>%
+    mutate(rank=ifelse(guild=="interior_forest" & percent>=0 & percent<=0.01, 1, ifelse(guild=="interior_forest" & percent>0.01 & percent<=0.08,1.5, ifelse(guild=="interior_forest" & percent>0.08 & percent<=0.26,3, ifelse(guild=="interior_forest" & percent>0.26 & percent<=0.43,4, ifelse(guild=="interior_forest" & percent>0.43, 5, rank))))))  %>%
+    mutate(rank=ifelse(guild=="lower_canopy" & percent>=0 & percent<=0.14, 1.5, ifelse(guild=="lower_canopy" & percent>0.14 & percent<=0.23,2.5, ifelse(guild=="lower_canopy" & percent>0.23, 5, rank)))) %>%
+    mutate(rank=ifelse(guild=="open_ground" & percent>=0 & percent<=0.02, 1, ifelse(guild=="open_ground" & percent>0.02 & percent<=0.11,2.5, ifelse(guild=="open_ground" & percent>0.11, 5, rank)))) %>%
+    mutate(rank=ifelse(guild=="predator_parasite" & percent>=0 & percent<=0.1, 5, ifelse(guild=="predator_parasite" & percent>0.1 & percent<=0.15,3.5, ifelse(guild=="predator_parasite" & percent>0.15 & percent<=0.18, 2, ifelse(guild=="predator_parasite" & percent>0.18,1, rank))))) %>%
+    mutate(rank=ifelse(guild=="resident" & percent>=0 & percent<=0.26, 5, ifelse(guild=="resident" & percent>0.26 & percent<=0.39,3.5, ifelse(guild=="resident" & percent>0.39 & percent<=0.57, 2, ifelse(guild=="resident" & percent>0.57,1, rank)))))%>%
+    mutate(rank=ifelse(guild=="shrub" & percent>=0 & percent<=0.21, 4, ifelse(guild=="shrub" & percent>0.21 & percent<=0.33,1.5, ifelse(guild=="shrub" & percent>0.33,1, rank))))%>%
+    mutate(rank=ifelse(guild=="single_brood" & percent>=0 & percent<=0.41, 1.5, ifelse(guild=="single_brood" & percent>0.41 & percent<=0.45,2, ifelse(guild=="single_brood" & percent>0.45 & percent<=0.61,3,ifelse(guild=="single_brood" & percent>0.61 & percent<=0.73,4, ifelse(guild=="single_brood" & percent>0.73,5, rank))))))%>%
+    mutate(rank=ifelse(guild=="temperate_migrant" & percent>=0 & percent<=0.21, 4, ifelse(guild=="temperate_migrant" & percent>0.21 & percent<=0.3,2, ifelse(guild=="temperate_migrant" & percent>0.3,1,rank))))%>%
+    mutate(rank=ifelse(guild=="upper_canopy" & percent>=0 & percent<=0.03, 1.5, ifelse(guild=="upper_canopy" & percent>0.03 & percent<=0.05,2, ifelse(guild=="upper_canopy" & percent>0.05 & percent<=0.12,3,ifelse(guild=="upper_canopy" & percent>0.12 & percent<=0.20,4.5, ifelse(guild=="upper_canopy" & percent>0.20,5, rank)))))) %>%
+    group_by(site) %>%
+    summarise(BCI=sum(rank))
+  
+
+
+          
+```

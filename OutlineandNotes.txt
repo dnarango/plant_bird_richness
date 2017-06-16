@@ -1,0 +1,110 @@
+Notes
+
+Bird Data - need 2016 NN data
+Plant Data - need to identify unknown shrubs 2016
+
+
+
+### Format data to array including every bird species and every visit
+birdsurvey<-read.csv("C:/Users/dnarango/Desktop/FINAL DATA/finalpointcounts_28march2017.csv", na.strings=".") %>%
+        select(id,site, year, month,juldate, timeformat, species_format,total) %>%
+        group_by(site, year, month, species_format) %>%
+        summarise(total=sum(total)) %>%
+        mutate(present=1) %>%
+        mutate(visit=paste(year,"-",month)) %>%
+        ungroup() %>%
+        select(-month, -year, -total) %>%
+  spread(species_format, present, fill=0) %>%
+        gather(species_format, present,3:100) %>%
+        spread(visit, present, fill=NA) 
+
+TO REMOVE
+1. Date: August Point Counts 
+a. Late in the season, too many transient birds
+Fixed - 4.24.2017 - MTH
+Removed sites from analysis during years in which they weren’t sampled 
+
+2. Detection: flyovers and >50
+a. Not relevant to plant data
+Fixed - 4.24.2017 - MTH
+3. Sites with no plant data
+a. Point count surveys will be fewer and may skew detection results by adding more uncertainty and cannot be used in final models anyway
+4. Birds
+a. Waterbirds: Not tied to plant data
+i. BEKI, CANG, LBHE,MALL, WODU, GBHE, GRHE
+ii. LAGU, RBGU
+b. Hawks: home ranges much larger than scale plants were sampled, not relevant to plant data
+i. BLVU, TUVU, RTHA, RSHA, COHA, SSHA, OSPR, 
+c. Non-breeding Migrants: 
+i. BHVI, BLBW, BLPW, BTBW, CSWA, MAWA, MOWA, MYWA, NOWA, RCKI, MYWA, BTNW, CAWA, DEJU, GCTH, HETH, PAWA, SWSP, SWTH, WIFL, WTSP
+d. Unlikely Breeders
+i. AMRE, BAWW, BWWA, HOWA, SUTA, YTWA, VEER
+e. Unknowns: Any sp. Entry, Not a real species
+i. crow sp., parakeets, rooster, unknown, crga
+            Fixed - 4.24.2017 - MTH - only spp included in the below list were used
+
+FINAL BIRD LIST
+acfl
+amcr
+amgo
+amro
+baor
+bars
+bggn
+bhco
+blgr
+blja
+brth
+cach
+carw
+cedw
+chsp
+chsw
+cogr
+coye
+dowo
+eabl
+eaki
+eaph
+eato
+eawp
+eust
+ficr
+fisp
+gcfl
+grca
+hawo
+hofi
+hosp
+howr
+inbu
+kill
+modo
+noca
+nofl
+nomo
+nopa
+oror
+oven
+piwa
+piwo
+puma
+rbwo
+revi
+ropi
+rthu
+rwbl
+scta
+sosp
+tres
+tuti
+wavi
+wbnu
+wevi
+woth
+ybcu
+yewa
+ytvi
+
+
+BCI scores (Ladin et al 2016)

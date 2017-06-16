@@ -1,0 +1,10 @@
+structure(list(V1 = structure(1:61, .Label = c("acfl", "amcr", 
+"amgo", "amro", "baor", "bars", "bggn", "bhco", "blgr", "blja", 
+"brth", "cach", "carw", "cedw", "chsp", "chsw", "cogr", "coye", 
+"dowo", "eabl", "eaki", "eaph", "eato", "eawp", "eust", "ficr", 
+"fisp", "gcfl", "grca", "hawo", "hofi", "hosp", "howr", "inbu", 
+"kill", "modo", "noca", "nofl", "nomo", "nopa", "oror", "oven", 
+"piwa", "piwo", "puma", "rbwo", "revi", "ropi", "rthu", "rwbl", 
+"scta", "sosp", "tres", "tuti", "wavi", "wbnu", "wevi", "woth", 
+"ybcu", "yewa", "ytvi"), class = "factor")), .Names = "V1", class = "data.frame", row.names = c(NA, 
+-61L))

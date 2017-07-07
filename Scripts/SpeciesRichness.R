@@ -13,8 +13,8 @@ output: html_notebook
 ## Read in the data
 ```{r}
 # Read in the data
-countdata <- read.csv("../Data/finalpointcounts_28march2017.csv", na.strings = ".", stringsAsFactors=FALSE)
-NNcountdata <- read.csv("../Data/final_NN_pointcounts_23april2017.csv", na.strings = ".", stringsAsFactors=FALSE)
+countdata <- read.csv("../data/finalpointcounts_28march2017.csv", na.strings = ".", stringsAsFactors=FALSE)
+NNcountdata <- read.csv("../data/final_NN_pointcounts_23april2017.csv", na.strings = ".", stringsAsFactors=FALSE)
 ```
 
 ## Combine the data sets and remove unused columns
@@ -38,7 +38,7 @@ countdata <- rbind(countdata,NNcountdata)
 ## format 2016 data to match previous years
 
 ```{r}
-NNcount2016 <- read.csv("../Data/2016_NN_pointcounts_30may2017.csv",na.strings = ".")
+NNcount2016 <- read.csv("../data/2016_NN_pointcounts_30may2017.csv",na.strings = ".")
 NNcount2016$month <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%m")
 NNcount2016$day <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%d")
 NNcount2016$year <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%Y")
@@ -151,9 +151,52 @@ S.O.I[]<- lapply(S.O.I, as.character)
 
 spp.array <- spp.array[,,,which(dimnames(spp.array)[[4]] %in% S.O.I$V1)]
 
+# order the species to make it easier down the road 
+spp.array <- spp.array[,,,match(S.O.I$V1,dimnames(spp.array)[[4]])]
+
 n.spp <- dim(spp.array)[4]
+
 ```
 
+## Read in BCI information needed for analysis 
+```{r}
+guild <- read.csv("../data/oconnel_BCI_guilds.csv")
+
+guild <- guilds[guilds$species %in% S.O.I$V1,]
+
+rank <- read.csv("../data/oconnel_BCI_rank.csv")
+head(rank)
+# BCI.Rmd is run here #
+
+# Format the guilds and rank conditions to use in the JAGS model to calculate BCI #
+Functional <- array(NA, c(length(sites),n.spp,5)) # 5 'guilds'
+for(i in 1:n.spp){
+Functional[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% omnivore$species,1,0)
+Functional[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% bark_prober$species,1,0)
+Functional[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% ground_gleaner$species,1,0)
+Functional[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% lower_canopy$species,1,0)
+Functional[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% upper_canopy$species,1,0)
+}
+
+Compositional <- array(NA, c(length(sites),n.spp,5)) # 5 'guilds'
+for(i in 1:n.spp){
+Compositional[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% predator_parasite$species,1,0)
+Compositional[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% exotic$species,1,0)
+Compositional[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% resident$species,1,0)
+Compositional[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% temperate_migrant$species,1,0)
+Compositional[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% single_brood$species,1,0)
+}
+
+Structural <- array(NA, c(length(sites),n.spp,6)) # 6 'guilds'
+for(i in 1:n.spp){
+Structural[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% forest_ground$species,1,0)
+Structural[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% open_ground$species,1,0)
+Structural[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% shrub$species,1,0)
+Structural[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% canopy$species,1,0)
+Structural[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% forest_generalist$species,1,0)
+Structural[,i,6]<-ifelse(dimnames(spp.array)[[4]][i] %in% interior_forest$species,1,0)
+}
+```
 # Analyze in Bayesian Framework
 ## Initial values
 ```{r}
@@ -192,12 +235,18 @@ win.data<-list(y = spp.array,
                nmonth = 4,
                nyears = 4,
                F.yr = as.numeric(F.yr),
-               L.yr = as.numeric(L.yr))
+               L.yr = as.numeric(L.yr),
+               Functional = Functional,
+               Compositional = Compositional,
+               Structural = Structural)
 
 
 # Parameters to monitor #
 
-params<-c("Nsite","max.spp","lpsi","lp","z","omega")
+params<-c("Nsite","max.spp","lpsi","lp","z","omega",
+          "omnivore","bark.prober","ground.gleaner","lower.canopy","upper.canopy",
+          "pred.parasite","exotic","resident","temp.migrant","single.brood",
+          "forest.ground","open.ground","canopy","forest.gen","int.forest")
 
 
 ##################################################################################
@@ -225,7 +274,6 @@ source("../Functions/sims.list.R")
 
 d<-process.output(outj1000[[1]],Rhat = TRUE,params.omit = "z")
 
-d$Rhat
 plot(d$mean$max.spp,
      pch = 20,
      col = "black",

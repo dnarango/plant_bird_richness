@@ -54,15 +54,152 @@ for(k in F.yr[i]:L.yr[i]){
 for (i in 1:nsites) {
 for(k in F.yr[i]:L.yr[i]){
    Nsite[i,k] <- sum(z[i,,k]) # Number of occurring species at each site
- } #nsites
-max.spp[i] <- max(Nsite[i,F.yr[i]:L.yr[i]])
-} #nyears
 
 ##################################################################################
 #
 # Bird Conservation Index 
 #                                                      
 ##################################################################################
+
+#######################
 # Functional Grouping # 
+#######################
+omnivore[i,k]  <- (sum(z[i,,k]*Functional[i,,1]))/Nsite[i,k]
+bark.prober[i,k] <- (sum(z[i,,k]*Functional[i,,2]))/Nsite[i,k]
+ground.gleaner[i,k] <- (sum(z[i,,k]*Functional[i,,3]))/Nsite[i,k]
+lower.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,4]))/Nsite[i,k]
+upper.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,5]))/Nsite[i,k]
+
+##########################
+# Compositional Grouping # 
+##########################
+pred.parasite[i,k]  <- (sum(z[i,,k]*Compositional[i,,1]))/Nsite[i,k]
+exotic[i,k] <- (sum(z[i,,k]*Compositional[i,,2]))/Nsite[i,k]
+resident[i,k] <- (sum(z[i,,k]*Compositional[i,,3]))/Nsite[i,k]
+temp.migrant[i,k] <- (sum(z[i,,k]*Compositional[i,,4]))/Nsite[i,k]
+single.brood[i,k] <- (sum(z[i,,k]*Compositional[i,,5]))/Nsite[i,k]
+
+#######################
+# Structural Grouping # 
+#######################
+forest.ground[i,k]  <- (sum(z[i,,k]*Structural[i,,1]))/Nsite[i,k]
+open.ground[i,k] <- (sum(z[i,,k]*Structural[i,,2]))/Nsite[i,k]
+shrub[i,k] <- (sum(z[i,,k]*Structural[i,,3]))/Nsite[i,k]
+canopy[i,k] <- (sum(z[i,,k]*Structural[i,,4]))/Nsite[i,k]
+forest.gen[i,k] <- (sum(z[i,,k]*Structural[i,,5]))/Nsite[i,k]
+int.forest[i,k] <- (sum(z[i,,k]*Structural[i,,6]))/Nsite[i,k]
+
+
+###########################
+# Calc BCI based on ranks #
+###########################
+# Omnivore score #
+rank[i,1,k] <- ifelse(omnivore[i,k] <= 0.29, 5, 
+               ifelse(omnivore[i,k] > 0.29 && omnivore[i,k] <=0.41,4, 
+               ifelse(omnivore[i,k]>0.41 && omnivore[i,k]<=0.48,3,
+               ifelse(omnivore[i,k]>0.48 && omnivore[i,k]<=0.58,2,
+               ifelse(omnivore[i,k]>0.58,1,0)))))
+
+# bark prober score #
+rank[i,2,k] <- ifelse(bark.prober[i,k]<=0.06, 1.5,
+               ifelse(bark.prober[i,k]>0.06 && bark.prober[i,k]<=0.11,3,
+               ifelse(bark.prober[i,k]>0.11 && bark.prober[i,k]<=0.17,4,
+               ifelse(bark.prober[i,k]>0.17,5,0))))
+
+# Ground gleaner score #
+rank[i,3,k] <- ifelse(ground.gleaner[i,k]>=0 && ground.gleaner[i,k]<=0.05, 1.5,
+               ifelse(ground.gleaner[i,k]>0.05 && ground.gleaner[i,k]<=0.07,2,
+               ifelse(ground.gleaner[i,k]>0.07 && ground.gleaner[i,k]<=0.14,4.5,
+               ifelse(ground.gleaner[i,k]>0.14,5,0))))
+
+# lower canopy score #
+rank[i,4,k] <- ifelse(lower.canopy[i,k] >=0 && lower.canopy[i,k] <=0.14, 1.5,
+               ifelse(lower.canopy[i,k] >0.14 && lower.canopy[i,k] <=0.23,2.5,
+               ifelse(lower.canopy[i,k] >0.23, 5, 0)))
+
+
+# Upper canopy Score #
+rank[i,5,k] <- ifelse(upper.canopy[i,k]>=0 && upper.canopy[i,k]<=0.03, 1.5,
+                ifelse(upper.canopy[i,k]>0.03 && upper.canopy[i,k]<=0.05,2, 
+                ifelse(upper.canopy[i,k]>0.05 && upper.canopy[i,k]<=0.12,3,
+                ifelse(upper.canopy[i,k]>0.12 && upper.canopy[i,k]<=0.20,4.5,
+                ifelse(upper.canopy[i,k]>0.20,5, 0)))))
+
+# Predator Parasite Score #
+rank[i,6,k] <- ifelse(pred.parasite[i,k]>=0 && pred.parasite[i,k]<=0.1, 5,
+                ifelse(pred.parasite[i,k]>0.1 && pred.parasite[i,k]<=0.15,3.5,
+                ifelse(pred.parasite[i,k]>0.15 && pred.parasite[i,k]<=0.18, 2,
+                ifelse(pred.parasite[i,k]>0.18,1, 0))))
+
+# Exoctic score #
+rank[i,7,k] <- ifelse(exotic[i,k]==0, 5, 
+               ifelse(exotic[i,k]>0 && exotic[i,k]<=0.02,4.5,
+               ifelse(exotic[i,k]>0.02 && exotic[i,k]<=0.05,3,
+               ifelse(exotic[i,k]>0.05 && exotic[i,k]<=0.11,2,
+               ifelse(exotic[i,k]>0.11,1,0)))))
+
+# Resident Score #
+rank[i,8,k] <- ifelse(resident[i,k]>=0 && resident[i,k]<=0.26, 5,
+                ifelse(resident[i,k]>0.26 && resident[i,k]<=0.39,3.5,
+                ifelse(resident[i,k]>0.39 && resident[i,k]<=0.57, 2,
+                ifelse(resident[i,k]>0.57,1, 0))))
+
+# Temperate Migrant Score #
+rank[i,9,k] <- ifelse(temp.migrant[i,k] >=0 && temp.migrant[i,k] <=0.21, 4,
+                ifelse(temp.migrant[i,k] >0.21 && temp.migrant[i,k] <=0.3,2,
+                ifelse(temp.migrant[i,k] >0.3,1,0)))
+
+# Single Brood Score #
+rank[i,10,k] <- ifelse(single.brood[i,k]>=0 && single.brood[i,k]<=0.41, 1.5,
+                ifelse(single.brood[i,k]>0.41 && single.brood[i,k]<=0.45,2,
+                ifelse(single.brood[i,k]>0.45 && single.brood[i,k]<=0.61,3,
+                ifelse(single.brood[i,k]>0.61 && single.brood[i,k]<=0.73,4,
+                ifelse(single.brood[i,k]>0.73,5, 0)))))
+
+# Forest ground score #
+rank[i,11,k] <-ifelse(forest.ground[i,k]==0, 1, 
+              ifelse(forest.ground[i,k]>0.001 && forest.ground[i,k]<=0.02,1.5,
+              ifelse(forest.ground[i,k]>0.02 && forest.ground[i,k]<=0.16,3, 
+              ifelse(forest.ground[i,k]>0.16 && forest.ground[i,k]<=0.24,4.5,
+              ifelse(forest.ground[i,k]>0.24,5,0)))))
+
+
+# open ground score #
+rank[i,12,k]<- ifelse(open.ground[i,k] >=0 && open.ground[i,k] <=0.02, 1,
+               ifelse(open.ground[i,k] >0.02 && open.ground[i,k] <=0.11,2.5,
+               ifelse(open.ground[i,k] >0.11, 5, 0)))
+
+
+# Shrub Score #
+    
+rank[i,13,k] <- ifelse(shrub[i,k]>=0 && shrub[i,k]<=0.21, 4, 
+                ifelse(shrub[i,k]>0.21 && shrub[i,k]<=0.33,1.5,
+                ifelse(shrub[i,k]>0.33,1, 0)))
+
+# Canopy nester score #
+rank[i,14,k] <- ifelse(canopy[i,k]<=0.28, 1.5,
+               ifelse(canopy[i,k]>0.28 && canopy[i,k]<=0.32,2,
+               ifelse(canopy[i,k]>0.32,4.5,0)))
+
+
+
+# Forest generalist score #
+rank[i,15,k] <- ifelse(forest.gen[i,k] <=0.28, 4.5,
+               ifelse(forest.gen[i,k] >0.28, 2.5,0))
+
+
+# Forest Interior score #
+rank[i,16,k] <- ifelse(int.forest[i,k]>=0 && int.forest[i,k]<=0.01, 1,
+               ifelse(int.forest[i,k]>0.01 && int.forest[i,k]<=0.08,1.5, 
+               ifelse(int.forest[i,k]>0.08 && int.forest[i,k]<=0.26,3,
+               ifelse(int.forest[i,k]>0.26 && int.forest[i,k]<=0.43,4,
+               ifelse(int.forest[i,k]>0.43, 5, 0)))))
+
+
+BCI[i,k] <- sum(rank[i,,k])
+ } #nsites
+max.spp[i] <- max(Nsite[i,F.yr[i]:L.yr[i]])
+BCI.score[i] <- max(BCI[i,F.yr[i]:L.yr[i]])
+} #nyears
 
 }

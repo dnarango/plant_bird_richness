@@ -1,0 +1,68 @@
+model{
+###################################################################################
+#
+#             Priors
+#
+###################################################################################
+#Hyper-prior for community membership
+#omega~dunif(0,1) 
+
+for(s in 1:nspp){         # Species
+   omega[s] ~ dunif(0,1)
+   lpsi[s] ~ dnorm(0,0.01)
+   lp[s] ~ dnorm(0,0.01)
+}  #nspp
+##################################################################################
+#
+# Likelihood
+# Ecological model for true occurrence (process model)
+#
+##################################################################################
+for (i in 1:nsites){
+for(k in F.yr[i]:L.yr[i]){ 
+for(s in 1:nspp){    
+      w[i,s,k] ~ dbern(omega[s])                                                    						 	
+      logit(psi[i,s,k])<-lpsi[s] 
+      mu.psi[i,s,k]<-psi[i,s,k]*w[i,s,k]
+      z[i,s,k] ~ dbern(mu.psi[i,s,k])
+   }  #nsites
+} #years
+}     #nspp
+##################################################################################
+#
+# Observation model for replicated detection/nondetection observations
+#
+##################################################################################
+for (i in 1:nsites){
+for(k in F.yr[i]:L.yr[i]){ 
+  for(s in 1:nspp){
+         logit(p[s,i,k])<-lp[s]
+      for(j in 1:nmonth){
+         #logit(p[s,i,j,k])<-lp[s]
+         # p.eff[s,i,j,k] <- z[i,s,k] * p[s,i,j,k]
+         p.eff[s,i,j,k] <- z[i,s,k] * p[s,i,k]
+         y[i,j,k,s] ~ dbern(p.eff[s,i,j,k])
+      } #nmonth
+   }    #nsite
+}       #nspp
+}       #nyears
+##################################################################################
+#
+# Derived quantities
+#
+##################################################################################
+for (i in 1:nsites) {
+for(k in F.yr[i]:L.yr[i]){
+   Nsite[i,k] <- sum(z[i,,k]) # Number of occurring species at each site
+ } #nsites
+max.spp[i] <- max(Nsite[i,F.yr[i]:L.yr[i]])
+} #nyears
+
+##################################################################################
+#
+# Bird Conservation Index 
+#                                                      
+##################################################################################
+# Functional Grouping # 
+
+}

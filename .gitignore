@@ -13,3 +13,4 @@ Figures/
 *.Rproj
 desktop.ini
 *.exe
+.Rproj.user

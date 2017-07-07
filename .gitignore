@@ -1,0 +1,15 @@
+# Git ignore these folders
+Figures/
+
+# Git ignore these file types
+*.Rproj.user
+*.Rhistory
+*.RData
+*.doc
+*.docx
+*.html
+*.dropbox
+*.dropbox.attr
+*.Rproj
+desktop.ini
+*.exe

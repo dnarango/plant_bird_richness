@@ -51,6 +51,8 @@ for(k in F.yr[i]:L.yr[i]){
 # Derived quantities
 #
 ##################################################################################
+frac.amt <- 0.0000001 # this is added so that you never divide by 0
+
 for (i in 1:nsites) {
 for(k in F.yr[i]:L.yr[i]){
    Nsite[i,k] <- sum(z[i,,k]) # Number of occurring species at each site
@@ -64,30 +66,30 @@ for(k in F.yr[i]:L.yr[i]){
 #######################
 # Functional Grouping # 
 #######################
-omnivore[i,k]  <- (sum(z[i,,k]*Functional[i,,1]))/Nsite[i,k]
-bark.prober[i,k] <- (sum(z[i,,k]*Functional[i,,2]))/Nsite[i,k]
-ground.gleaner[i,k] <- (sum(z[i,,k]*Functional[i,,3]))/Nsite[i,k]
-lower.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,4]))/Nsite[i,k]
-upper.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,5]))/Nsite[i,k]
+omnivore[i,k]  <- (sum(z[i,,k]*Functional[i,,1])+frac.amt)/(Nsite[i,k]+frac.amt)
+bark.prober[i,k] <- (sum(z[i,,k]*Functional[i,,2])+frac.amt)/(Nsite[i,k]+frac.amt)
+ground.gleaner[i,k] <- (sum(z[i,,k]*Functional[i,,3])+frac.amt)/(Nsite[i,k]+frac.amt)
+lower.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,4])+frac.amt)/(Nsite[i,k]+frac.amt)
+upper.canopy[i,k] <- (sum(z[i,,k]*Functional[i,,5])+frac.amt)/(Nsite[i,k]+frac.amt)
 
 ##########################
 # Compositional Grouping # 
 ##########################
-pred.parasite[i,k]  <- (sum(z[i,,k]*Compositional[i,,1]))/Nsite[i,k]
-exotic[i,k] <- (sum(z[i,,k]*Compositional[i,,2]))/Nsite[i,k]
-resident[i,k] <- (sum(z[i,,k]*Compositional[i,,3]))/Nsite[i,k]
-temp.migrant[i,k] <- (sum(z[i,,k]*Compositional[i,,4]))/Nsite[i,k]
-single.brood[i,k] <- (sum(z[i,,k]*Compositional[i,,5]))/Nsite[i,k]
+pred.parasite[i,k]  <- (sum(z[i,,k]*Compositional[i,,1])+frac.amt)/(Nsite[i,k]+frac.amt)
+exotic[i,k] <- (sum(z[i,,k]*Compositional[i,,2])+frac.amt)/(Nsite[i,k]+frac.amt)
+resident[i,k] <- (sum(z[i,,k]*Compositional[i,,3])+frac.amt)/(Nsite[i,k]+frac.amt)
+temp.migrant[i,k] <- (sum(z[i,,k]*Compositional[i,,4])+frac.amt)/(Nsite[i,k]+frac.amt)
+single.brood[i,k] <- (sum(z[i,,k]*Compositional[i,,5])+frac.amt)/(Nsite[i,k]+frac.amt)
 
 #######################
 # Structural Grouping # 
 #######################
-forest.ground[i,k]  <- (sum(z[i,,k]*Structural[i,,1]))/Nsite[i,k]
-open.ground[i,k] <- (sum(z[i,,k]*Structural[i,,2]))/Nsite[i,k]
-shrub[i,k] <- (sum(z[i,,k]*Structural[i,,3]))/Nsite[i,k]
-canopy[i,k] <- (sum(z[i,,k]*Structural[i,,4]))/Nsite[i,k]
-forest.gen[i,k] <- (sum(z[i,,k]*Structural[i,,5]))/Nsite[i,k]
-int.forest[i,k] <- (sum(z[i,,k]*Structural[i,,6]))/Nsite[i,k]
+forest.ground[i,k]  <- (sum(z[i,,k]*Structural[i,,1])+frac.amt)/(Nsite[i,k]+frac.amt)
+open.ground[i,k] <- (sum(z[i,,k]*Structural[i,,2])+frac.amt)/(Nsite[i,k]+frac.amt)
+shrub[i,k] <- (sum(z[i,,k]*Structural[i,,3])+frac.amt)/(Nsite[i,k]+frac.amt)
+canopy[i,k] <- (sum(z[i,,k]*Structural[i,,4])+frac.amt)/(Nsite[i,k]+frac.amt)
+forest.gen[i,k] <- (sum(z[i,,k]*Structural[i,,5])+frac.amt)/(Nsite[i,k]+frac.amt)
+int.forest[i,k] <- (sum(z[i,,k]*Structural[i,,6])+frac.amt)/(Nsite[i,k]+frac.amt)
 
 
 ###########################

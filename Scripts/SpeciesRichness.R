@@ -244,9 +244,7 @@ win.data<-list(y = spp.array,
 # Parameters to monitor #
 
 params<-c("Nsite","max.spp","lpsi","lp","z","omega",
-          "omnivore","bark.prober","ground.gleaner","lower.canopy","upper.canopy",
-          "pred.parasite","exotic","resident","temp.migrant","single.brood",
-          "forest.ground","open.ground","canopy","forest.gen","int.forest")
+          "BCI","BCI.score")
 
 
 ##################################################################################
@@ -263,9 +261,9 @@ outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
             seed=04823,
             inits=inits, 
             parameters.to.save=params, 
-            n.iter=1000,
-            n.burnin=500,
-            n.thin=2, 
+            n.iter=10000,
+            n.burnin=5000,
+            n.thin=5, 
             n.chains=3,
             save.model = TRUE)
 proc.time()-ptm
@@ -274,10 +272,10 @@ source("../Functions/sims.list.R")
 
 d<-process.output(outj1000[[1]],Rhat = TRUE,params.omit = "z")
 
-plot(d$mean$max.spp,
+plot(d$mean$BCI.score,
      pch = 20,
      col = "black",
-     ylim = c(15,40))
-segments(c(1:dim(spp.array)[1]),d$q2.5$max.spp,
-         c(1:dim(spp.array)[1]),d$q97.5$max.spp)
+     ylim = c(25,55))
+segments(c(1:dim(spp.array)[1]),d$q2.5$BCI.score,
+         c(1:dim(spp.array)[1]),d$q97.5$BCI.score)
 ```

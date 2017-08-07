@@ -70,8 +70,6 @@ countdata <- rbind(countdata,NNcountdata,NNcount2016_format)
 
 countdata$month <- as.numeric(countdata$month)
 countdata$month[countdata$month == 8]<-7
-
-
 ```
 
 ```{r}
@@ -140,7 +138,7 @@ if(y == 1){
     spp.array[,1:4,y,s]<-as.matrix(temp[,10:13])
   }
   if(y == 4){
-    spp.array[,1:2,y,s]<-as.matrix(temp[,14:15])
+    spp.array[,1:4,y,s]<-as.matrix(temp[,14:17])
   }
 }
 }
@@ -162,10 +160,50 @@ n.spp <- dim(spp.array)[4]
 ```{r}
 guild <- read.csv("../data/oconnel_BCI_guilds.csv")
 
-guild <- guilds[guilds$species %in% S.O.I$V1,]
-
 rank <- read.csv("../data/oconnel_BCI_rank.csv")
-head(rank)
+
+
+## Functional
+omnivore<- guild %>%
+      filter(response=="omnivore")%>% mutate(omnivore=1) %>% select(species, omnivore)
+bark_prober<- guild %>%
+      filter(response=="bark_prober")%>% mutate(bark_prober=1) %>% select(species, bark_prober)  
+ground_gleaner<- guild %>%
+      filter(response=="ground_gleaner")%>% mutate(ground_gleaner=1) %>% select(species, ground_gleaner)
+upper_canopy<- guild %>%
+      filter(response=="upper_canopy")%>% mutate(upper_canopy=1) %>% select(species, upper_canopy)
+lower_canopy<- guild %>%
+      filter(response=="lower_canopy")%>% mutate(lower_canopy=1) %>% select(species, lower_canopy)
+
+##Compositional
+predator_parasite<- guild %>%
+      filter(response=="predator_parasite")%>% mutate(predator_parasite=1) %>% select(species,       predator_parasite)
+exotic<- guild %>%
+      filter(response=="exotic")%>% mutate(exotic=1) %>% select(species, exotic)
+resident<- guild %>%
+      filter(response=="resident")%>% mutate(resident=1) %>% select(species, resident)
+temperate_migrant<- guild %>%
+      filter(response=="temperate_migrant")%>% mutate(temperate_migrant=1) %>% select(species, temperate_migrant)
+single_brood<- guild %>%
+      filter(response=="single-brood")%>% mutate(single_brood=1) %>% select(species, single_brood)
+
+##Structural
+forest_ground<- guild %>%
+      filter(response=="forest_ground")%>% mutate(forest_ground=1) %>% select(species, forest_ground)
+open_ground<- guild %>%
+      filter(response=="open_ground")%>% mutate(open_ground=1) %>% select(species, open_ground)
+shrub<- guild %>%
+      filter(response=="shrub")%>% mutate(shrub=1) %>% select(species, shrub)
+canopy<- guild %>%
+      filter(response=="canopy_nester")%>% mutate(canopy=1) %>% select(species, canopy)
+forest_generalist<- guild %>%
+      filter(response=="forest_generalist")%>% mutate(forest_generalist=1) %>% select(species, forest_generalist)
+interior_forest<- guild %>%
+      filter(response=="interior_forest")%>% mutate(interior_forest=1) %>% select(species, interior_forest)
+
+
+
+
 # BCI.Rmd is run here #
 
 # Format the guilds and rank conditions to use in the JAGS model to calculate BCI #
@@ -243,7 +281,7 @@ win.data<-list(y = spp.array,
 
 # Parameters to monitor #
 
-params<-c("Nsite","max.spp","lpsi","lp","z","omega",
+params<-c("Nsite","max.spp","lpsi","lp","omega",
           "BCI","BCI.score")
 
 
@@ -261,9 +299,9 @@ outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
             seed=04823,
             inits=inits, 
             parameters.to.save=params, 
-            n.iter=10000,
-            n.burnin=5000,
-            n.thin=5, 
+            n.iter=100,
+            n.burnin=5,
+            n.thin=1, 
             n.chains=3,
             save.model = TRUE)
 proc.time()-ptm
@@ -278,4 +316,8 @@ plot(d$mean$BCI.score,
      ylim = c(25,55))
 segments(c(1:dim(spp.array)[1]),d$q2.5$BCI.score,
          c(1:dim(spp.array)[1]),d$q97.5$BCI.score)
+
+n <- data.frame(dimnames(spp.array)[[1]],d$mean$BCI.score)
+plot(n[order(n[,2]),2])
+
 ```

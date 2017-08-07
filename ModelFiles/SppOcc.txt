@@ -19,8 +19,8 @@ for(s in 1:nspp){         # Species
 #
 ##################################################################################
 for (i in 1:nsites){
+for(s in 1:nspp){   
 for(k in F.yr[i]:L.yr[i]){ 
-for(s in 1:nspp){    
       w[i,s,k] ~ dbern(omega[s])                                                    						 	
       logit(psi[i,s,k])<-lpsi[s] 
       mu.psi[i,s,k]<-psi[i,s,k]*w[i,s,k]
@@ -38,8 +38,6 @@ for(k in F.yr[i]:L.yr[i]){
   for(s in 1:nspp){
          logit(p[s,i,k])<-lp[s]
       for(j in 1:nmonth){
-         #logit(p[s,i,j,k])<-lp[s]
-         # p.eff[s,i,j,k] <- z[i,s,k] * p[s,i,j,k]
          p.eff[s,i,j,k] <- z[i,s,k] * p[s,i,k]
          y[i,j,k,s] ~ dbern(p.eff[s,i,j,k])
       } #nmonth

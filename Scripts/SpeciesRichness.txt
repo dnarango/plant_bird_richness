@@ -4,26 +4,125 @@ output: html_notebook
 # Species richness
   
 
+
+## Read in plant information from each site 
+
+
+```r
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+plants_to_remove<-c("",".","0","unknown","unknown ornamental shrub",
+                    "unknown (vine)","unknown (ilex)", "unknown (conifer)","unknown shrub",
+                    "unknown (pine)")
+
+plants_to_remove<-c("snag","telephone pole","herbaceous","rosemary","no shrubs","sage",
+                    "ground cover","yucca","cactus"," ",".","0","")
+
+ID_to_remove<-c("angeparva1 - 2013","buisnorva1 - 2013","burdrobva1 - 2013","camprosmd1 - 2013",
+                "champarva1 - 2013","cronchrva2 - 2013","eganmarmd1 - 2016","fishferva1 - 2013",
+                "giraangmd1 - 2013","hillthrva1 - 2013","hopkbarmd1 - 2013","hulljefva1 - 2013",
+                "jacosydmd1 - 2013","lafomelva1 - 2013","lindhanmd1 - 2013","lyonlynva1 - 2013",
+                "marrpetmd2 - 2013","mcnakrimd1 - 2013","morrchrva1 - 2013","myerbrumd1 - 2013",
+                "omalmadva1 - 2013","raunerimd2 - 2013","rohrsalmd1 - 2013","ruttjormd1 - 2013",
+                "singdadmd1 - 2013","sollchrmd1 - 2013","stewbetmd1 - 2013","sturcarmd1 - 2013",
+                "traupatva2 - 2013","versbetmd1 - 2013","vongjenmd1 - 2013","wildannva1 - 2013",
+                "wisecelmd1 - 2013","younelimd1 - 2013")
+
+sites_to_remove<-c("angeparva1","champarva1","cameparva1","hillthrva1","ohagkerva1","ohagkarva1")
+
+# read data in
+mastersheet<-read.csv("../data/mastersheet_7aug2017.csv")
+
+trees<-read.csv("../data/finaltrees_7aug2017.csv") %>%
+        mutate(type="tree") %>%
+        mutate(ID=paste(site,"-",year)) %>%
+        mutate(plantspecies=tolower(treespp_format)) %>%
+        left_join(mastersheet, by="plantspecies") %>%
+        select(site, ID, plantspecies,type, taxa.origin) %>%
+        filter(!plantspecies %in% plants_to_remove)
+        
+        
+shrubs<-read.csv("../data/finalshrubs_7aug2017.csv") %>%
+        mutate(type="shrub") %>%
+        mutate(ID=paste(site,"-",year)) %>%
+         mutate(plantspecies=tolower(shrub_format)) %>%
+        left_join(mastersheet, by="plantspecies") %>%
+        select(site, ID, plantspecies,type, taxa.origin) %>%
+        filter(!plantspecies %in% plants_to_remove)
+
+
+site_plantrichness<-trees %>%
+                    rbind(shrubs) %>%
+                    group_by(site, ID, plantspecies, taxa.origin) %>%
+                    summarise(plant_count=n()) %>%
+                    group_by(site,ID,taxa.origin) %>%
+                    summarise(species_count=n()) %>%
+                    spread(taxa.origin, species_count, fill=0) %>%
+                    rename(nonnative="non-native") %>%
+                    mutate(total_plant_taxa=native+nonnative+unknown) %>%
+                    mutate(proportion_nonnative=nonnative/total_plant_taxa) %>%
+                    filter(!ID %in% ID_to_remove)  %>%   ## remove sites sampled in >1 year
+                    filter(!site %in% sites_to_remove) 
+
+site_plantrichness$site <- as.character(site_plantrichness$site)
 ```
-## Error: <text>:3:17: unexpected symbol
-## 2:   library(dplyr)
-## 3:   library(tidyr)z
-##                    ^
+
+
+```r
+# Slightly edit a few study site names
+site_plantrichness$site[which(site_plantrichness == "andrkenmd1")]<-"andrkenva1"
+site_plantrichness$site[which(site_plantrichness == "huffchrva1-1")]<-"huffchrva1"
+site_plantrichness$site[which(site_plantrichness == "mazujenmd2")]<-"mazujenmd1"
+site_plantrichness$site[which(site_plantrichness == "wiltinva1")]<-"willtinva1"
+
+# Sort the dataframe so that the sites are in ABC order
+site_plantrichness <- site_plantrichness[order(site_plantrichness$site),]
+
+StudySites <- site_plantrichness$site
+```
+
+## Generate variables of interest 
+
+```r
+# standardize the values of interest #
+TotalPlantSpp <- (site_plantrichness$total_plant_taxa-mean(site_plantrichness$total_plant_taxa))/sd(site_plantrichness$total_plant_taxa)
+PropNonNative <- (site_plantrichness$proportion_nonnative-mean(site_plantrichness$proportion_nonnative))/sd(site_plantrichness$proportion_nonnative)
 ```
 
 ## Read in the data
 
 ```r
 # Read in the data
-countdata <- read.csv("../Data/finalpointcounts_28march2017.csv", na.strings = ".")
-NNcountdata <- read.csv("../Data/final_NN_pointcounts_23april2017.csv", na.strings = ".")
+countdata <- read.csv("../data/finalpointcounts_28march2017.csv", na.strings = ".", stringsAsFactors=FALSE)
+NNcountdata <- read.csv("../data/final_NN_pointcounts_23april2017.csv", na.strings = ".", stringsAsFactors=FALSE)
 ```
 
+## Combine the data sets and remove unused columns
+
+```r
+# Variables of interest 
+
+vars <- c("id","site","year","month",
+          "observer","juldate","timeformat",
+          "species_format",
+          "dist1","dist2","dist3","dist4","dist5",
+          "total",
+          "detection","detection_format")
+
+# Keep only those variables in that order #
+countdata <- countdata[,vars]
+
+NNcountdata <- NNcountdata[,vars]
+
+countdata <- rbind(countdata,NNcountdata)
+```
 ## format 2016 data to match previous years
 
 
 ```r
-NNcount2016 <- read.csv("../Data/2016_NN_pointcounts_30may2017.csv")
+NNcount2016 <- read.csv("../data/2016_NN_pointcounts_30may2017.csv",na.strings = ".")
 NNcount2016$month <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%m")
 NNcount2016$day <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%d")
 NNcount2016$year <- format(as.POSIXct(NNcount2016$date, format = "%m/%d/%Y"),"%Y")
@@ -32,48 +131,37 @@ NNcount2016$species_format <- tolower(NNcount2016$species_format)
 
 NNcount2016_format<-NNcount2016 %>%
                     mutate(site=tolower(site)) %>%
-                    select(site,startTimePc, timePc, species_format, distancePc, countPc, juldate )
-```
+                    mutate(id=paste(site,"-",juldate,"-", year,"-", timePc)) %>%
+                    group_by(id, site, observerPc, date, day, month, year, juldate, startTimePc, timePc, speciesPc, species_format, distancePc, detectionPc)%>%
+                    summarise(count=sum(countPc))%>%
+                    spread(distancePc, count, fill=0 ) %>%
+                    rename(observer=observerPc, start_time=startTimePc,time_interval=timePc, species=speciesPc)
+                    
+  names(NNcount2016_format)[13:18]<-c("detection","dist1","dist2","dist3","dist4","dist5")
+ 
+NNcount2016_format$total <- apply(NNcount2016_format[,14:18],1,sum, na.rm = TRUE)
+NNcount2016_format$detection_format <- tolower(substr(NNcount2016_format$detection,1,1))
+NNcount2016_format$timeformat <- as.numeric(gsub(x = NNcount2016_format$start_time,pattern = ":", replacement = ""))
 
-```
-## Error in eval(expr, envir, enclos): could not find function "%>%"
+# reorder to match other years #
+NNcount2016_format <- NNcount2016_format[,vars]
 ```
 
 
 ```r
 # combine the two data sets
-countdata <- rbind(countdata,NNcountdata[,1:30])
-```
 
-```
-## Warning in `[<-.factor`(`*tmp*`, ri, value = c(NA, NA, NA, NA, NA, NA,
-## NA, : invalid factor level, NA generated
+countdata <- rbind(countdata,NNcountdata,NNcount2016_format)
 
-## Warning in `[<-.factor`(`*tmp*`, ri, value = c(NA, NA, NA, NA, NA, NA,
-## NA, : invalid factor level, NA generated
-
-## Warning in `[<-.factor`(`*tmp*`, ri, value = c(NA, NA, NA, NA, NA, NA,
-## NA, : invalid factor level, NA generated
-```
-
-```r
+countdata$month <- as.numeric(countdata$month)
 countdata$month[countdata$month == 8]<-7
-```
-
-
-```r
-# Create vectors from the data to help summarize the data 
-sites <- levels(countdata$site)
-visits <- unique(countdata$month)
-n.spp <- levels(countdata$species_format)
-years <- c(2013:2016)
-n.years <- length(years)
 ```
 
 ## Structure the data 
 
 ```r
 ### Format data to array including every bird species and every visit
+
 birdsurvey <-countdata %>%
         filter(detection != "flyover" | detection != ">50" )%>%
         select(id,site, year, month,juldate, timeformat, species_format,total) %>%
@@ -84,51 +172,20 @@ birdsurvey <-countdata %>%
         ungroup() %>%
         select(-month, -year, -total) %>%
   spread(species_format, present, fill=0) %>%
-        gather(species_format, present,3:108) %>%
+        gather(species_format, present,3:114) %>%
         spread(visit, present, fill=NA) 
-```
 
-```
-## Error in eval(expr, envir, enclos): could not find function "%>%"
-```
-
-```r
 # Determine which years were surveyed
 siteYr <- group_by(countdata,site)%>%
             summarize(minYr = min(year),
                       maxYr = max(year))
-```
 
-```
-## Error in eval(expr, envir, enclos): could not find function "%>%"
-```
-
-```r
 siteVisits <- group_by(countdata,site,year,month)%>%
                summarize(n())
-```
 
-```
-## Error in eval(expr, envir, enclos): could not find function "%>%"
-```
-
-```r
 F.yr <- siteYr$minYr
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'siteYr' not found
-```
-
-```r
 L.yr <- siteYr$maxYr
-```
 
-```
-## Error in eval(expr, envir, enclos): object 'siteYr' not found
-```
-
-```r
 # change to integer years
 for(i in 1:n.years){
 F.yr[F.yr == years[i]]<-i
@@ -137,7 +194,23 @@ L.yr[L.yr == years[i]]<-i
 ```
 
 ```
-## Error in F.yr[F.yr == years[i]] <- i: object 'F.yr' not found
+## Error in eval(expr, envir, enclos): object 'n.years' not found
+```
+
+```r
+# Save only the count data for sites where vegetation surveys were conducted 
+
+birdsurvey <- birdsurvey[birdsurvey$site %in% StudySites,]
+```
+
+
+```r
+# Create vectors from the data to help summarize the data 
+sites <- unique(birdsurvey$site)
+visits <- length(unique(countdata$month))
+n.spp <- unique(countdata$species_format)
+years <- c(2013:2016)
+n.years <- length(years)
 ```
 
 ## Convert occurence data to array format
@@ -164,26 +237,106 @@ if(y == 1){
     spp.array[,1:4,y,s]<-as.matrix(temp[,10:13])
   }
   if(y == 4){
-    spp.array[,1:2,y,s]<-as.matrix(temp[,14:15])
+    spp.array[,1:4,y,s]<-as.matrix(temp[,14:17])
   }
 }
 }
-```
 
-```
-## Error in subset(birdsurvey, species_format == n.spp[s]): object 'birdsurvey' not found
-```
-
-```r
 # Remove species that are unlikey to breed or vegetation is not relevant at the scale of the yard
 S.O.I <- dget("../Data/SpeciesToKeep.txt")
 S.O.I[]<- lapply(S.O.I, as.character)
 
 spp.array <- spp.array[,,,which(dimnames(spp.array)[[4]] %in% S.O.I$V1)]
 
+# order the species to make it easier down the road 
+spp.array <- spp.array[,,,match(S.O.I$V1,dimnames(spp.array)[[4]])]
+
 n.spp <- dim(spp.array)[4]
 ```
 
+
+## Read in BCI information needed for analysis 
+
+```r
+guild <- read.csv("../data/oconnel_BCI_guilds.csv")
+
+rank <- read.csv("../data/oconnel_BCI_rank.csv")
+
+
+## Functional
+omnivore<- guild %>%
+      filter(response=="omnivore")%>% mutate(omnivore=1) %>% select(species, omnivore)
+bark_prober<- guild %>%
+      filter(response=="bark_prober")%>% mutate(bark_prober=1) %>% select(species, bark_prober)  
+ground_gleaner<- guild %>%
+      filter(response=="ground_gleaner")%>% mutate(ground_gleaner=1) %>% select(species, ground_gleaner)
+upper_canopy<- guild %>%
+      filter(response=="upper_canopy")%>% mutate(upper_canopy=1) %>% select(species, upper_canopy)
+lower_canopy<- guild %>%
+      filter(response=="lower_canopy")%>% mutate(lower_canopy=1) %>% select(species, lower_canopy)
+
+##Compositional
+predator_parasite<- guild %>%
+      filter(response=="predator_parasite")%>% mutate(predator_parasite=1) %>% select(species,       predator_parasite)
+exotic<- guild %>%
+      filter(response=="exotic")%>% mutate(exotic=1) %>% select(species, exotic)
+resident<- guild %>%
+      filter(response=="resident")%>% mutate(resident=1) %>% select(species, resident)
+temperate_migrant<- guild %>%
+      filter(response=="temperate_migrant")%>% mutate(temperate_migrant=1) %>% select(species, temperate_migrant)
+single_brood<- guild %>%
+      filter(response=="single-brood")%>% mutate(single_brood=1) %>% select(species, single_brood)
+
+##Structural
+forest_ground<- guild %>%
+      filter(response=="forest_ground")%>% mutate(forest_ground=1) %>% select(species, forest_ground)
+open_ground<- guild %>%
+      filter(response=="open_ground")%>% mutate(open_ground=1) %>% select(species, open_ground)
+shrub<- guild %>%
+      filter(response=="shrub")%>% mutate(shrub=1) %>% select(species, shrub)
+canopy<- guild %>%
+      filter(response=="canopy_nester")%>% mutate(canopy=1) %>% select(species, canopy)
+forest_generalist<- guild %>%
+      filter(response=="forest_generalist")%>% mutate(forest_generalist=1) %>% select(species, forest_generalist)
+interior_forest<- guild %>%
+      filter(response=="interior_forest")%>% mutate(interior_forest=1) %>% select(species, interior_forest)
+
+
+
+
+# BCI.Rmd is run here #
+
+# Format the guilds and rank conditions to use in the JAGS model to calculate BCI #
+Functional <- array(NA, c(length(sites),n.spp,5)) # 5 'guilds'
+for(i in 1:n.spp){
+Functional[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% omnivore$species,1,0)
+Functional[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% bark_prober$species,1,0)
+Functional[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% ground_gleaner$species,1,0)
+Functional[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% lower_canopy$species,1,0)
+Functional[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% upper_canopy$species,1,0)
+}
+
+Compositional <- array(NA, c(length(sites),n.spp,5)) # 5 'guilds'
+for(i in 1:n.spp){
+Compositional[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% predator_parasite$species,1,0)
+Compositional[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% exotic$species,1,0)
+Compositional[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% resident$species,1,0)
+Compositional[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% temperate_migrant$species,1,0)
+Compositional[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% single_brood$species,1,0)
+}
+
+Structural <- array(NA, c(length(sites),n.spp,6)) # 6 'guilds'
+for(i in 1:n.spp){
+Structural[,i,1]<-ifelse(dimnames(spp.array)[[4]][i] %in% forest_ground$species,1,0)
+Structural[,i,2]<-ifelse(dimnames(spp.array)[[4]][i] %in% open_ground$species,1,0)
+Structural[,i,3]<-ifelse(dimnames(spp.array)[[4]][i] %in% shrub$species,1,0)
+Structural[,i,4]<-ifelse(dimnames(spp.array)[[4]][i] %in% canopy$species,1,0)
+Structural[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% forest_generalist$species,1,0)
+Structural[,i,6]<-ifelse(dimnames(spp.array)[[4]][i] %in% interior_forest$species,1,0)
+}
+```
+
+    
 # Analyze in Bayesian Framework
 ## Initial values
 
@@ -221,20 +374,19 @@ nchains<-3
 win.data<-list(y = spp.array,
                nsites = dim(spp.array)[1],
                nspp = dim(spp.array)[4],
-               nmonth = 4,
-               nyears = 4,
-               F.yr = F.yr,
-               L.yr = L.yr)
-```
+               nmonth = dim(spp.array)[2],
+               nyears = dim(spp.array)[3],
+               F.yr = as.numeric(F.yr),
+               L.yr = as.numeric(L.yr),
+               Functional = Functional,
+               Compositional = Compositional,
+               Structural = Structural)
 
-```
-## Error in eval(expr, envir, enclos): object 'F.yr' not found
-```
 
-```r
 # Parameters to monitor #
 
-params<-c("Nsite","lpsi","lp","z","omega")
+params<-c("Nsite","max.spp","lpsi","lp","omega",
+          "BCI","BCI.score")
 
 
 ##################################################################################
@@ -243,13 +395,7 @@ params<-c("Nsite","lpsi","lp","z","omega")
 #
 ##################################################################################
 library(jagsUI)
-```
 
-```
-## Loading required package: lattice
-```
-
-```r
 ptm<-proc.time()
 outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
             data=win.data,
@@ -258,7 +404,7 @@ outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
             inits=inits, 
             parameters.to.save=params, 
             n.iter=100,
-            n.burnin=50,
+            n.burnin=5,
             n.thin=1, 
             n.chains=3,
             save.model = TRUE)
@@ -266,11 +412,17 @@ outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
 
 ```
 ## 
-## Processing function input.......
+## Processing function input....... 
+## 
+## Done. 
+##  
+## Beginning parallel processing using 3 cores. Console output will be suppressed.
 ```
 
 ```
-## Error in process.input(data, parameters.to.save, inits, n.chains, n.iter, : object 'win.data' not found
+## Error in checkForRemoteErrors(val): 3 nodes produced errors; first error: RUNTIME ERROR:
+## Compilation error on line 45.
+## Index out of range taking subset of  y
 ```
 
 ```r
@@ -279,37 +431,12 @@ proc.time()-ptm
 
 ```
 ##    user  system elapsed 
-##       0       0       0
+##    3.26    0.05    4.60
 ```
 
 ```r
 source("../Functions/sims.list.R")
-```
 
-```
-## Loading required package: coda
-```
-
-```
-## 
-## Attaching package: 'coda'
-```
-
-```
-## The following object is masked from 'package:jagsUI':
-## 
-##     traceplot
-```
-
-```
-## Linked to JAGS 4.2.0
-```
-
-```
-## Loaded modules: basemod,bugs
-```
-
-```r
 d<-process.output(outj1000[[1]],Rhat = TRUE,params.omit = "z")
 ```
 
@@ -322,21 +449,37 @@ d<-process.output(outj1000[[1]],Rhat = TRUE,params.omit = "z")
 ```
 
 ```r
-plot(d$mean$Nsite[,1],
+plot(d$mean$BCI.score,
      pch = 20,
      col = "black",
-     ylim = c(10,40))
+     ylim = c(25,55))
 ```
 
 ```
-## Error in plot(d$mean$Nsite[, 1], pch = 20, col = "black", ylim = c(10, : object 'd' not found
+## Error in plot(d$mean$BCI.score, pch = 20, col = "black", ylim = c(25, : object 'd' not found
 ```
 
 ```r
-segments(c(1:dim(spp.array)[1]),d$q2.5$Nsite[,1],
-         c(1:dim(spp.array)[1]),d$q97.5$Nsite[,1])
+segments(c(1:dim(spp.array)[1]),d$q2.5$BCI.score,
+         c(1:dim(spp.array)[1]),d$q97.5$BCI.score)
 ```
 
 ```
-## Error in segments(c(1:dim(spp.array)[1]), d$q2.5$Nsite[, 1], c(1:dim(spp.array)[1]), : object 'd' not found
+## Error in segments(c(1:dim(spp.array)[1]), d$q2.5$BCI.score, c(1:dim(spp.array)[1]), : object 'd' not found
+```
+
+```r
+n <- data.frame(dimnames(spp.array)[[1]],d$mean$BCI.score)
+```
+
+```
+## Error in data.frame(dimnames(spp.array)[[1]], d$mean$BCI.score): object 'd' not found
+```
+
+```r
+plot(n[order(n[,2]),2])
+```
+
+```
+## Error in n[, 2]: object of type 'closure' is not subsettable
 ```

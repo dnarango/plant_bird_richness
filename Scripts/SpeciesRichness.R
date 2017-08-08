@@ -10,6 +10,92 @@ output: html_notebook
   knitr::opts_chunk$set(dpi = 600, warning = FALSE, message = FALSE)
 ```
 
+## Read in plant information from each site 
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+plants_to_remove<-c("",".","0","unknown","unknown ornamental shrub",
+                    "unknown (vine)","unknown (ilex)", "unknown (conifer)","unknown shrub",
+                    "unknown (pine)")
+
+plants_to_remove<-c("snag","telephone pole","herbaceous","rosemary","no shrubs","sage",
+                    "ground cover","yucca","cactus"," ",".","0","")
+
+ID_to_remove<-c("angeparva1 - 2013","buisnorva1 - 2013","burdrobva1 - 2013","camprosmd1 - 2013",
+                "champarva1 - 2013","cronchrva2 - 2013","eganmarmd1 - 2016","fishferva1 - 2013",
+                "giraangmd1 - 2013","hillthrva1 - 2013","hopkbarmd1 - 2013","hulljefva1 - 2013",
+                "jacosydmd1 - 2013","lafomelva1 - 2013","lindhanmd1 - 2013","lyonlynva1 - 2013",
+                "marrpetmd2 - 2013","mcnakrimd1 - 2013","morrchrva1 - 2013","myerbrumd1 - 2013",
+                "omalmadva1 - 2013","raunerimd2 - 2013","rohrsalmd1 - 2013","ruttjormd1 - 2013",
+                "singdadmd1 - 2013","sollchrmd1 - 2013","stewbetmd1 - 2013","sturcarmd1 - 2013",
+                "traupatva2 - 2013","versbetmd1 - 2013","vongjenmd1 - 2013","wildannva1 - 2013",
+                "wisecelmd1 - 2013","younelimd1 - 2013")
+
+sites_to_remove<-c("angeparva1","champarva1","cameparva1","hillthrva1","ohagkerva1","ohagkarva1")
+
+# read data in
+mastersheet<-read.csv("../data/mastersheet_7aug2017.csv")
+
+trees<-read.csv("../data/finaltrees_7aug2017.csv") %>%
+        mutate(type="tree") %>%
+        mutate(ID=paste(site,"-",year)) %>%
+        mutate(plantspecies=tolower(treespp_format)) %>%
+        left_join(mastersheet, by="plantspecies") %>%
+        select(site, ID, plantspecies,type, taxa.origin) %>%
+        filter(!plantspecies %in% plants_to_remove)
+        
+        
+shrubs<-read.csv("../data/finalshrubs_7aug2017.csv") %>%
+        mutate(type="shrub") %>%
+        mutate(ID=paste(site,"-",year)) %>%
+         mutate(plantspecies=tolower(shrub_format)) %>%
+        left_join(mastersheet, by="plantspecies") %>%
+        select(site, ID, plantspecies,type, taxa.origin) %>%
+        filter(!plantspecies %in% plants_to_remove)
+
+
+site_plantrichness<-trees %>%
+                    rbind(shrubs) %>%
+                    group_by(site, ID, plantspecies, taxa.origin) %>%
+                    summarise(plant_count=n()) %>%
+                    group_by(site,ID,taxa.origin) %>%
+                    summarise(species_count=n()) %>%
+                    spread(taxa.origin, species_count, fill=0) %>%
+                    rename(nonnative="non-native") %>%
+                    mutate(total_plant_taxa=native+nonnative+unknown) %>%
+                    mutate(proportion_nonnative=nonnative/total_plant_taxa) %>%
+                    filter(!ID %in% ID_to_remove)  %>%   ## remove sites sampled in >1 year
+                    filter(!site %in% sites_to_remove) 
+
+site_plantrichness$site <- as.character(site_plantrichness$site)
+```
+
+```{r}
+# Slightly edit a few study site names
+site_plantrichness$site[which(site_plantrichness == "andrkenmd1")]<-"andrkenva1"
+site_plantrichness$site[which(site_plantrichness == "huffchrva1-1")]<-"huffchrva1"
+site_plantrichness$site[which(site_plantrichness == "mazujenmd2")]<-"mazujenmd1"
+site_plantrichness$site[which(site_plantrichness == "wiltinva1")]<-"willtinva1"
+
+# Sort the dataframe so that the sites are in ABC order
+site_plantrichness <- site_plantrichness[order(site_plantrichness$site),]
+
+StudySites <- site_plantrichness$site
+```
+
+## Generate variables of interest 
+```{r}
+# standardize the values of interest #
+#TotalPlantSpp <- (site_plantrichness$total_plant_taxa-mean(site_plantrichness$total_plant_taxa))/sd(site_plantrichness$total_plant_taxa)
+#PropNonNative <- (site_plantrichness$proportion_nonnative-mean(site_plantrichness$proportion_nonnative))/sd(site_plantrichness$proportion_nonnative)
+
+TotalPlantSpp <- site_plantrichness$total_plant_taxa
+PropNonNative <- site_plantrichness$proportion_nonnative
+```
+
 ## Read in the data
 ```{r}
 # Read in the data
@@ -72,18 +158,11 @@ countdata$month <- as.numeric(countdata$month)
 countdata$month[countdata$month == 8]<-7
 ```
 
-```{r}
-# Create vectors from the data to help summarize the data 
-sites <- unique(countdata$site)
-visits <- length(unique(countdata$month))
-n.spp <- unique(countdata$species_format)
-years <- c(2013:2016)
-n.years <- length(years)
-``` 
-
 ## Structure the data 
 ```{r}
+
 ### Format data to array including every bird species and every visit
+
 birdsurvey <-countdata %>%
         filter(detection != "flyover" | detection != ">50" )%>%
         select(id,site, year, month,juldate, timeformat, species_format,total) %>%
@@ -93,7 +172,7 @@ birdsurvey <-countdata %>%
         mutate(visit=paste(year,"-",month)) %>%
         ungroup() %>%
         select(-month, -year, -total) %>%
-  spread(species_format, present, fill=0) %>%
+        spread(species_format, present, fill=0) %>%
         gather(species_format, present,3:114) %>%
         spread(visit, present, fill=NA) 
 
@@ -102,18 +181,39 @@ siteYr <- group_by(countdata,site)%>%
             summarize(minYr = min(year),
                       maxYr = max(year))
 
+siteYr <- siteYr[siteYr$site %in% StudySites,]
+
 siteVisits <- group_by(countdata,site,year,month)%>%
                summarize(n())
 
 F.yr <- siteYr$minYr
 L.yr <- siteYr$maxYr
 
+years <- c(2013:2016)
+n.years <- length(years)
+
 # change to integer years
 for(i in 1:n.years){
 F.yr[F.yr == years[i]]<-i
 L.yr[L.yr == years[i]]<-i
 }
+
+# Save only the count data for sites where vegetation surveys were conducted 
+
+birdsurvey <- birdsurvey[birdsurvey$site %in% StudySites,]
+birdsurvey <- birdsurvey[order(birdsurvey$site),]
+
+PropNonNative <- PropNonNative[StudySites %in% birdsurvey$site]
+TotalPlantSpp <- TotalPlantSpp[StudySites %in% birdsurvey$site]
 ```
+
+
+```{r}
+# Create vectors from the data to help summarize the data 
+sites <- unique(birdsurvey$site)
+visits <- length(unique(countdata$month))
+n.spp <- unique(countdata$species_format)
+``` 
 
 ## Convert occurence data to array format
 ```{r}
@@ -143,6 +243,7 @@ if(y == 1){
 }
 }
 
+
 # Remove species that are unlikey to breed or vegetation is not relevant at the scale of the yard
 S.O.I <- dget("../Data/SpeciesToKeep.txt")
 S.O.I[]<- lapply(S.O.I, as.character)
@@ -153,8 +254,8 @@ spp.array <- spp.array[,,,which(dimnames(spp.array)[[4]] %in% S.O.I$V1)]
 spp.array <- spp.array[,,,match(S.O.I$V1,dimnames(spp.array)[[4]])]
 
 n.spp <- dim(spp.array)[4]
-
 ```
+
 
 ## Read in BCI information needed for analysis 
 ```{r}
@@ -162,6 +263,19 @@ guild <- read.csv("../data/oconnel_BCI_guilds.csv")
 
 rank <- read.csv("../data/oconnel_BCI_rank.csv")
 
+# Identify any species that is in the spp.array that is an insectivore #
+insectEater <- guild$species[grep("insectivore",guild$guild)]
+insectEater <- match(dimnames(spp.array)[[4]],insectEater)
+
+# create binary array for model #
+insectEater[is.na(insectEater)]<-0
+insectEater[insectEater > 0]<-1
+
+rep.row<-function(x,n){
+   matrix(rep(x,each=n),nrow=n)
+}
+
+insectivores <- rep.row(insectEater,dim(spp.array)[1])
 
 ## Functional
 omnivore<- guild %>%
@@ -235,20 +349,23 @@ Structural[,i,5]<-ifelse(dimnames(spp.array)[[4]][i] %in% forest_generalist$spec
 Structural[,i,6]<-ifelse(dimnames(spp.array)[[4]][i] %in% interior_forest$species,1,0)
 }
 ```
+
+    
 # Analyze in Bayesian Framework
 ## Initial values
 ```{r}
 # Inital values #
 # Function to pass inital z values to jags in parallel
-Zint<-function(x,F.yr,L.yr){
+Zint<-function(x){
 suppressWarnings(zst <- apply(x,c(1,4,3),max, na.rm = TRUE))# Observed occurrence as starting values
   
-# z.all <- zst
-# 
-# zst[,,1:F.yr]<-NA
-# zst[,,L.yr:4]<-NA
-# 
-# zst[,,F.yr:L.yr] <- z.all[,,F.yr:L.yr]
+#z.all <- zst
+ 
+#zst[,,1:F.yr]<-NA
+#zst[,,L.yr:4]<-NA
+ 
+#zst[,,F.yr:L.yr] <- z.all[,,F.yr:L.yr]
+  
 zst[zst==-Inf]<-NA
 
 return(list(z = zst,
@@ -256,12 +373,11 @@ return(list(z = zst,
 }
 ```
 
-
 ```{r}
 set.seed(04823)
 
-inits <- function() list(z = Zint(spp.array,F.yr,L.yr)$z,
-                         w = Zint(spp.array,F.yr,L.yr)$w)
+inits <- function() list(z = Zint(spp.array)$z,
+                         w = Zint(spp.array)$w)
 
 nchains<-3
 
@@ -270,19 +386,20 @@ nchains<-3
 win.data<-list(y = spp.array,
                nsites = dim(spp.array)[1],
                nspp = dim(spp.array)[4],
-               nmonth = 4,
-               nyears = 4,
+               nmonth = dim(spp.array)[2],
+               nyears = dim(spp.array)[3],
                F.yr = as.numeric(F.yr),
                L.yr = as.numeric(L.yr),
                Functional = Functional,
                Compositional = Compositional,
-               Structural = Structural)
+               Structural = Structural,
+               Insectivores = insectivores)
 
 
 # Parameters to monitor #
 
 params<-c("Nsite","max.spp","lpsi","lp","omega",
-          "BCI","BCI.score")
+          "BCI","BCI.score", "max.insect")
 
 
 ##################################################################################
@@ -299,8 +416,8 @@ outj1000<- jags.basic(model.file ="../ModelFiles/SppOcc.txt",
             seed=04823,
             inits=inits, 
             parameters.to.save=params, 
-            n.iter=100,
-            n.burnin=5,
+            n.iter=1000,
+            n.burnin=500,
             n.thin=1, 
             n.chains=3,
             save.model = TRUE)
@@ -310,14 +427,16 @@ source("../Functions/sims.list.R")
 
 d<-process.output(outj1000[[1]],Rhat = TRUE,params.omit = "z")
 
-plot(d$mean$BCI.score,
-     pch = 20,
-     col = "black",
-     ylim = c(25,55))
-segments(c(1:dim(spp.array)[1]),d$q2.5$BCI.score,
-         c(1:dim(spp.array)[1]),d$q97.5$BCI.score)
+plot(d$mean$BCI.score~PropNonNative,ylim = c(25,55),pch = 19, col = "black", cex = 1.25)
+abline(lm(d$mean$BCI.score~PropNonNative))
+segments(x0 = PropNonNative,y0 = d$q2.5$BCI.score,
+         x1 = PropNonNative,y1 = d$q97.5$BCI.score, col = "gray88")
+points(d$mean$BCI.score~PropNonNative,pch = 19, col = "black",cex = 1.25)
 
-n <- data.frame(dimnames(spp.array)[[1]],d$mean$BCI.score)
-plot(n[order(n[,2]),2])
 
+plot(d$mean$max.spp~TotalPlantSpp)
+abline(lm(d$mean$max.spp~TotalPlantSpp))
+segments(x0 = PropNonNative,y0 = d$q2.5$max.spp,
+         x1 = PropNonNative,y1 = d$q97.5$max.spp, col = "gray88")
+points(d$mean$max.spp~PropNonNative,pch = 19, col = "black",cex = 1.25)
 ```

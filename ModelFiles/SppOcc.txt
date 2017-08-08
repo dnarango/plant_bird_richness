@@ -7,6 +7,9 @@ model{
 #Hyper-prior for community membership
 #omega~dunif(0,1) 
 
+#alpha ~ dnorm(0,0.01)
+#beta ~ dnorm(0,0.01)
+
 for(s in 1:nspp){         # Species
    omega[s] ~ dunif(0,1)
    lpsi[s] ~ dnorm(0,0.01)
@@ -60,6 +63,8 @@ for(k in F.yr[i]:L.yr[i]){
 # Bird Conservation Index 
 #                                                      
 ##################################################################################
+
+insectivores[i,k] <- sum(z[i,,k]*Insectivores[i,])
 
 #######################
 # Functional Grouping # 
@@ -197,9 +202,14 @@ rank[i,16,k] <- ifelse(int.forest[i,k]>=0 && int.forest[i,k]<=0.01, 1,
 
 
 BCI[i,k] <- sum(rank[i,,k])
- } #nsites
+ } #nyears
+
 max.spp[i] <- max(Nsite[i,F.yr[i]:L.yr[i]])
 BCI.score[i] <- max(BCI[i,F.yr[i]:L.yr[i]])
-} #nyears
+max.insect[i] <- max(insectivores[i,F.yr[i]:L.yr[i]])
+
+#max.spp[i] ~ dpois(mu[i])
+#mu[i] <- alpha+beta*PropNonNative[i]
+} #nsites
 
 }
